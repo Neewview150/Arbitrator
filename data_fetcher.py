@@ -52,8 +52,11 @@ def fetch_symbols(exchange, symbol_to_id):
     """Fetch only the symbols available on Poloniex that match the mapping."""
     try:
         response = requests.get(POLONIEX_API_URL)
-        response.raise_for_status()
-        data = response.json()
+        if response.status_code == 200:
+            data = response.json()
+        else:
+            logging.error(f"Failed to fetch symbols from Poloniex. Status code: {response.status_code}")
+            return set()
 
         # Initialize symbols variable
         symbols = {pair.split('_')[0] for pair in data.keys()}
@@ -63,7 +66,7 @@ def fetch_symbols(exchange, symbol_to_id):
         logging.info(f"Fetched and matched symbols from Poloniex: {matched_symbols}")
         return matched_symbols
     except requests.RequestException as e:
-        logging.error(f"Error fetching symbols from Poloniex: {e}")
+        logging.error(f"RequestException while fetching symbols from Poloniex: {e}")
         return set()
 
 
@@ -71,10 +74,13 @@ def fetch_market_data() -> Dict[str, Dict[str, float]]:
     """Fetch market data from Poloniex."""
     try:
         response = requests.get(POLONIEX_API_URL)
-        response.raise_for_status()
-        return response.json()
+        if response.status_code == 200:
+            return response.json()
+        else:
+            logging.error(f"Failed to fetch market data from Poloniex. Status code: {response.status_code}")
+            return {}
     except requests.RequestException as e:
-        logging.error(f"Error fetching market data: {e}")
+        logging.error(f"RequestException while fetching market data: {e}")
         return {}
 
 def fetch_and_return_data(symbol_to_id):

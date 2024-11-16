@@ -20,8 +20,17 @@ def get_data():
         # Load symbol mapping
         symbol_to_id = fetch_and_return_data("symbols.txt")
         
+        if not symbol_to_id:
+            logging.error("Failed to load symbol mapping.")
+            return jsonify({'error': 'Failed to load symbol mapping'}), 500
+        
         # Fetch symbols and prices
-        symbols, prices = fetch_and_return_data(symbol_to_id)
+        try:
+            symbols, prices = fetch_and_return_data(symbol_to_id)
+            logging.info(f"Fetched symbols and prices: {symbols}, {prices}")
+        except Exception as e:
+            logging.error(f"Error fetching symbols and prices: {e}")
+            return jsonify({'error': 'Failed to fetch symbols and prices'}), 500
         
         # Prepare chart data
         chart_data = prepare_chart_data(prices)
@@ -39,8 +48,8 @@ def get_data():
             'arbitrageOpportunities': arbitrage_opportunities
         })
     except Exception as e:
-        logging.error(f"Error fetching data: {e}")
-        return jsonify({'error': 'Failed to fetch data'}), 500
+        logging.error(f"Unexpected error in /api/data endpoint: {e}")
+        return jsonify({'error': 'Unexpected error occurred'}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
