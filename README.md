@@ -26,6 +26,59 @@ To set up the project, follow these steps:
    ```
 
 ## Usage
+## USD/EUR Trading Strategy
+
+This section describes a trading strategy for the USD/EUR currency pair using leverage. The strategy aims to exploit short-term price movements with a focus on risk management and ethical trading practices.
+
+### Purpose
+
+The strategy is designed to be frequently profitable by leveraging trades on the USD/EUR pair. It incorporates risk management techniques to ensure that trades do not exceed a certain percentage of the account balance.
+
+### Implementation
+
+The strategy is implemented in Python and uses a leverage of 100%. It includes functions for calculating leverage, managing risk, and executing or simulating trades. Trades are logged for analysis and review.
+
+### Prerequisites
+
+- Python 3.x
+- Required Python packages listed in `requirements.txt`
+- Access to the FBS trading platform API (or simulation mode)
+
+### Setup
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/Neewview150/Arbitrator.git
+   cd Arbitrator
+   ```
+
+2. **Set up a virtual environment** (optional but recommended):
+   ```bash
+   python3 -m venv venv
+   source venv/bin/activate  # On Windows use `venv\Scriptsctivate`
+   ```
+
+3. **Install the dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+### Running the Strategy
+
+To run the USD/EUR trading strategy, execute the following command:
+
+```bash
+python usd_eur_trading_strategy.py
+```
+
+You will be prompted to choose between simulating trades or executing them. Enter 's' for simulation or 'e' for execution.
+
+### Interpreting Results
+
+- **Trade Logs**: All trades are logged in `trade_log.txt` with details of each trade, including the amount, leverage, and profit.
+- **Balance Updates**: The script outputs the new balance after each trade, allowing you to track performance over time.
+
+## Usage
 
 To run the project and start the web interface, execute the following command:
 
