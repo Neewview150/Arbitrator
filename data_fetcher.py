@@ -1,4 +1,3 @@
-
 import time
 import requests
 import logging
@@ -46,49 +45,26 @@ def get_mapped_symbols(symbol_to_id):
         return set()  # Return an empty set if not a dictionary
 
 def fetch_all_mapped_symbols(symbol_to_id):
-    """Fetch all mapped symbols from all exchanges."""
-    fetched_symbols = set()
-    for exchange in exchanges:
-        fetched_symbols.update(fetch_symbols(exchange, symbol_to_id, limit=10))  # Limit to 10 symbols
-    return fetched_symbols
+    """Fetch all mapped symbols from Poloniex."""
+    return fetch_symbols('poloniex', symbol_to_id)  # Fetch symbols only from Poloniex
 
-def fetch_symbols(exchange, symbol_to_id, limit=10):
-    """Fetch only the symbols available on the given exchange that match the mapping, limited to a specified number."""
-    retries = 5
-    wait_time = 25  # Set fixed wait time to 25 seconds
-    matched_symbols = set()
+def fetch_symbols(exchange, symbol_to_id):
+    """Fetch only the symbols available on Poloniex that match the mapping."""
+    try:
+        response = requests.get(POLONIEX_API_URL)
+        response.raise_for_status()
+        data = response.json()
 
-    for attempt in range(retries):
-        try:
-            time.sleep(wait_time)  # Wait for 25 seconds
-            response = requests.get(f"{coingecko_api}/exchanges/{exchange}/tickers")
-            response.raise_for_status()
-            data = response.json()
+        # Initialize symbols variable
+        symbols = {pair.split('_')[0] for pair in data.keys()}
+        logging.info(f"Total symbols fetched from Poloniex: {len(symbols)}")
 
-            # Initialize symbols variable
-            symbols = {ticker['base'] for ticker in data['tickers']}
-            logging.info(f"Total symbols fetched from {exchange}: {len(symbols)}")
-
-            matched_symbols.update(symbols.intersection(get_mapped_symbols(symbol_to_id)))
-
-            # Limit to the specified number of symbols
-            if len(matched_symbols) > limit:
-                matched_symbols = set(list(matched_symbols)[:limit])  # Keep only the first 'limit' symbols
-            
-            logging.info(f"Fetched and matched symbols from {exchange}: {matched_symbols}")
-            return matched_symbols
-        except requests.exceptions.HTTPError as e:
-            if response.status_code == 404:
-                logging.warning(f"No tickers found for exchange {exchange}.")
-                return set()
-            else:
-                logging.error(f"HTTP error occurred: {e}")
-        except requests.exceptions.RequestException as e:
-            logging.error(f"Request error occurred: {e}")
-        except Exception as e:
-            logging.error(f"Error fetching symbols : {e}")
-
-    return matched_symbols  # Return matched symbols even if the API request fails after retries
+        matched_symbols = symbols.intersection(get_mapped_symbols(symbol_to_id))
+        logging.info(f"Fetched and matched symbols from Poloniex: {matched_symbols}")
+        return matched_symbols
+    except requests.RequestException as e:
+        logging.error(f"Error fetching symbols from Poloniex: {e}")
+        return set()
 
 
 def fetch_market_data() -> Dict[str, Dict[str, float]]:

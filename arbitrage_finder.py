@@ -1,7 +1,12 @@
 import logging
 import requests
 from typing import List, Dict
+import logging
+import requests
+from typing import List, Dict
 from data_fetcher import fetch_and_return_data
+from web3 import Web3
+from web3.middleware import geth_poa_middleware
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
@@ -19,7 +24,7 @@ def find_direct_arbitrage_opportunities(symbols, symbol_to_id, prices):
     return arbitrage_opportunities
 
 def find_triangular_arbitrage_opportunities(symbols, symbol_to_id, prices, fee_percentage=0.002):
-    """Find triangular arbitrage opportunities between exchanges, ensuring all symbols are distinct."""
+    """Find triangular arbitrage opportunities on Poloniex, ensuring all symbols are distinct."""
     triangular_arbitrage_opportunities = []
     
     for symbol1 in symbols:
@@ -27,30 +32,25 @@ def find_triangular_arbitrage_opportunities(symbols, symbol_to_id, prices, fee_p
             for symbol3 in symbols:
                 # Ensure all symbols are distinct
                 if symbol1 != symbol2 and symbol2 != symbol3 and symbol1 != symbol3:
-                    for exchange1 in exchanges:
-                        for exchange2 in exchanges:
-                            for exchange3 in exchanges:
-                                # Ensure all exchanges are distinct
-                                if exchange1 != exchange2 and exchange2 != exchange3 and exchange1 != exchange3:
-                                    price1 = prices[symbol1][exchange1]
-                                    price2 = prices[symbol2][exchange2]
-                                    price3 = prices[symbol3][exchange3]
+                    price1 = prices[symbol1]['poloniex']
+                    price2 = prices[symbol2]['poloniex']
+                    price3 = prices[symbol3]['poloniex']
 
-                                    if price1 > 0 and price2 > 0 and price3 > 0:
-                                        # Calculate potential profit without fees
-                                        profit_without_fees = (price1 / price2) * price3
-                                        
-                                        # Apply fees
-                                        total_fee = (fee_percentage * (price1 + price2 + price3))
-                                        profit_with_fees = profit_without_fees - total_fee
-                                        
-                                        # Check if the profit is positive after fees
-                                        if profit_with_fees > 0:
-                                            profit_percentage = (profit_with_fees / total_fee) * 100
-                                            if profit_percentage > 1:  # Set a threshold for profitability
-                                                triangular_arbitrage_opportunities.append(
-                                                    (symbol1, symbol2, symbol3, exchange1, exchange2, exchange3, price1, price2, price3, profit_with_fees)
-                                                )
+                    if price1 > 0 and price2 > 0 and price3 > 0:
+                        # Calculate potential profit without fees
+                        profit_without_fees = (price1 / price2) * price3
+                        
+                        # Apply fees
+                        total_fee = (fee_percentage * (price1 + price2 + price3))
+                        profit_with_fees = profit_without_fees - total_fee
+                        
+                        # Check if the profit is positive after fees
+                        if profit_with_fees > 0:
+                            profit_percentage = (profit_with_fees / total_fee) * 100
+                            if profit_percentage > 1:  # Set a threshold for profitability
+                                triangular_arbitrage_opportunities.append(
+                                    (symbol1, symbol2, symbol3, 'poloniex', 'poloniex', 'poloniex', price1, price2, price3, profit_with_fees)
+                                )
     return triangular_arbitrage_opportunities
 
 def simulate_trade(symbol1, symbol2, symbol3, exchange1, exchange2, exchange3, price1, price2, price3, fee_percentage):
@@ -110,6 +110,56 @@ def scan_arbitrage_opportunities(api_key: str, api_secret: str) -> List[Dict[str
 
     opportunities = identify_arbitrage_opportunities(market_data)
     return opportunities
+
+def execute_trade(opportunity, contract_address, provider_url):
+    """Execute trade using flash loans."""
+    try:
+        # Connect to the blockchain
+        web3 = Web3(Web3.HTTPProvider(provider_url))
+        web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+
+        if not web3.isConnected():
+            logging.error("Failed to connect to the blockchain")
+            return
+
+        # Load the flash loan contract
+        contract = web3.eth.contract(address=contract_address, abi=FLASH_LOAN_CONTRACT_ABI)
+
+        # Prepare transaction parameters
+        account = web3.eth.account.from_key('YOUR_PRIVATE_KEY')  # Replace with secure key management
+        nonce = web3.eth.getTransactionCount(account.address)
+        gas_price = web3.eth.gas_price
+
+        # Define the transaction
+        transaction = contract.functions.executeFlashLoan(
+            web3.toWei(1, 'ether'),  # Example amount, replace with actual logic
+            [opportunity['pair1'], opportunity['pair2'], opportunity['pair3']]
+        ).buildTransaction({
+            'chainId': 1,  # Mainnet chain ID, replace if using a testnet
+            'gas': 2000000,
+            'gasPrice': gas_price,
+            'nonce': nonce
+        })
+
+        # Sign the transaction
+        signed_txn = web3.eth.account.sign_transaction(transaction, private_key='YOUR_PRIVATE_KEY')  # Replace with secure key management
+
+        # Send the transaction
+        tx_hash = web3.eth.sendRawTransaction(signed_txn.rawTransaction)
+        logging.info(f"Transaction sent with hash: {web3.toHex(tx_hash)}")
+
+        # Wait for the transaction receipt
+        receipt = web3.eth.waitForTransactionReceipt(tx_hash)
+        logging.info(f"Transaction receipt: {receipt}")
+
+    except Exception as e:
+        logging.error(f"Error executing arbitrage: {e}")
+
+def prompt_user_for_trade(opportunity):
+    """Prompt user to confirm trade execution."""
+    print(f"Opportunity found: {opportunity}")
+    choice = input("Do you want to execute this trade? (yes/no): ")
+    return choice.lower() == 'yes'
 
 def write_successful_arbitrages_to_file(opportunities):
     """Write successful arbitrage opportunities to a text file."""
@@ -180,4 +230,8 @@ if __name__ == "__main__":
     symbols, prices, symbol_to_id = fetch_and_return_data("symbols.txt")
     direct_arbitrage_opportunities = find_direct_arbitrage_opportunities(symbols, symbol_to_id, prices)
     triangular_arbitrage_opportunities = find_triangular_arbitrage_opportunities(symbols, symbol_to_id, prices)
+    for opportunity in triangular_arbitrage_opportunities:
+        if prompt_user_for_trade(opportunity):
+            execute_trade(opportunity, 'CONTRACT_ADDRESS', 'PROVIDER_URL')  # Replace with actual contract address and provider URL
+
     write_successful_arbitrages_to_file(direct_arbitrage_opportunities + triangular_arbitrage_opportunities)
