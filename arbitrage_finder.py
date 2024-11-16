@@ -1,5 +1,7 @@
 import logging
 from data_fetcher import fetch_and_return_data
+from web3 import Web3
+from web3.middleware import geth_poa_middleware
 
 def find_direct_arbitrage_opportunities(symbols, symbol_to_id, prices):
     """Find direct arbitrage opportunities between exchanges."""
@@ -75,6 +77,65 @@ def write_successful_arbitrages_to_file(opportunities):
     with open("arbitrage_opportunities.txt", "w") as file:
         for opportunity in opportunities:
             file.write(f"{opportunity}\n")
+
+FLASH_LOAN_CONTRACT_ABI = [
+    {
+        "constant": False,
+        "inputs": [
+            {"name": "amount", "type": "uint256"},
+            {"name": "tokens", "type": "string[]"}
+        ],
+        "name": "executeFlashLoan",
+        "outputs": [],
+        "payable": False,
+        "stateMutability": "nonpayable",
+        "type": "function"
+    }
+]
+
+def execute_arbitrage(opportunity, contract_address, provider_url):
+    """Execute arbitrage using a flash loan."""
+    try:
+        # Connect to the blockchain
+        web3 = Web3(Web3.HTTPProvider(provider_url))
+        web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+
+        if not web3.isConnected():
+            logging.error("Failed to connect to the blockchain")
+            return
+
+        # Load the flash loan contract
+        contract = web3.eth.contract(address=contract_address, abi=FLASH_LOAN_CONTRACT_ABI)
+
+        # Prepare transaction parameters
+        account = web3.eth.account.from_key('YOUR_PRIVATE_KEY')  # Replace with secure key management
+        nonce = web3.eth.getTransactionCount(account.address)
+        gas_price = web3.eth.gas_price
+
+        # Define the transaction
+        transaction = contract.functions.executeFlashLoan(
+            web3.toWei(1, 'ether'),  # Example amount, replace with actual logic
+            [opportunity['pair1'], opportunity['pair2'], opportunity['pair3']]
+        ).buildTransaction({
+            'chainId': 1,  # Mainnet chain ID, replace if using a testnet
+            'gas': 2000000,
+            'gasPrice': gas_price,
+            'nonce': nonce
+        })
+
+        # Sign the transaction
+        signed_txn = web3.eth.account.sign_transaction(transaction, private_key='YOUR_PRIVATE_KEY')  # Replace with secure key management
+
+        # Send the transaction
+        tx_hash = web3.eth.sendRawTransaction(signed_txn.rawTransaction)
+        logging.info(f"Transaction sent with hash: {web3.toHex(tx_hash)}")
+
+        # Wait for the transaction receipt
+        receipt = web3.eth.waitForTransactionReceipt(tx_hash)
+        logging.info(f"Transaction receipt: {receipt}")
+
+    except Exception as e:
+        logging.error(f"Error executing arbitrage: {e}")
 
 if __name__ == "__main__":
     symbols, prices, symbol_to_id = fetch_and_return_data("symbols.txt")
