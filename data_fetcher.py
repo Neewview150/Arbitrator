@@ -1,12 +1,17 @@
 import time
 import requests
 import logging
+from typing import Dict
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
 # CoinGecko API endpoint
 coingecko_api = "https://api.coingecko.com/api/v3"
+
+
+# Poloniex API endpoint
+POLONIEX_API_URL = "https://poloniex.com/public?command=returnTicker"
 
 # List of exchanges to use
 exchanges = ["lbank", "kraken", "poloniex", "uniswap"]
@@ -40,65 +45,69 @@ def get_mapped_symbols(symbol_to_id):
         return set()  # Return an empty set if not a dictionary
 
 def fetch_all_mapped_symbols(symbol_to_id):
-    """Fetch all mapped symbols from all exchanges."""
-    fetched_symbols = set()
-    for exchange in exchanges:
-        fetched_symbols.update(fetch_symbols(exchange, symbol_to_id, limit=10))  # Limit to 10 symbols
-    return fetched_symbols
+    """Fetch all mapped symbols from Poloniex."""
+    return fetch_symbols('poloniex', symbol_to_id)  # Fetch symbols only from Poloniex
 
-def fetch_symbols(exchange, symbol_to_id, limit=10):
-    """Fetch only the symbols available on the given exchange that match the mapping, limited to a specified number."""
-    retries = 5
-    wait_time = 25  # Set fixed wait time to 25 seconds
-    matched_symbols = set()
+def fetch_symbols(exchange, symbol_to_id):
+    """Fetch only the symbols available on Poloniex that match the mapping."""
+    try:
+        response = requests.get(POLONIEX_API_URL)
+        response.raise_for_status()
+        data = response.json()
 
-    for attempt in range(retries):
-        try:
-            time.sleep(wait_time)  # Wait for 25 seconds
-            response = requests.get(f"{coingecko_api}/exchanges/{exchange}/tickers")
-            response.raise_for_status()
-            data = response.json()
+        # Initialize symbols variable
+        symbols = {pair.split('_')[0] for pair in data.keys()}
+        logging.info(f"Total symbols fetched from Poloniex: {len(symbols)}")
 
-            # Initialize symbols variable
-            symbols = {ticker['base'] for ticker in data['tickers']}
-            logging.info(f"Total symbols fetched from {exchange}: {len(symbols)}")
+        matched_symbols = symbols.intersection(get_mapped_symbols(symbol_to_id))
+        logging.info(f"Fetched and matched symbols from Poloniex: {matched_symbols}")
+        return matched_symbols
+    except requests.RequestException as e:
+        logging.error(f"Error fetching symbols from Poloniex: {e}")
+        return set()
 
-            matched_symbols.update(symbols.intersection(get_mapped_symbols(symbol_to_id)))
 
-            # Limit to the specified number of symbols
-            if len(matched_symbols) > limit:
-                matched_symbols = set(list(matched_symbols)[:limit])  # Keep only the first 'limit' symbols
-            
-            logging.info(f"Fetched and matched symbols from {exchange}: {matched_symbols}")
-            return matched_symbols
-        except requests.exceptions.HTTPError as e:
-            if response.status_code == 404:
-                logging.warning(f"No tickers found for exchange {exchange}.")
-                return set()
-            else:
-                logging.error(f"HTTP error occurred: {e}")
-        except requests.exceptions.RequestException as e:
-            logging.error(f"Request error occurred: {e}")
-        except Exception as e:
-            logging.error(f"Error fetching symbols : {e}")
-
-    return matched_symbols  # Return matched symbols even if the API request fails after retries
+def fetch_market_data() -> Dict[str, Dict[str, float]]:
+    """Fetch market data from Poloniex."""
+    try:
+        response = requests.get(POLONIEX_API_URL)
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as e:
+        logging.error(f"Error fetching market data: {e}")
+        return {}
 
 def fetch_and_return_data(symbol_to_id):
     """Fetch prices for all mapped symbols and return them."""
     fetched_symbols = fetch_all_mapped_symbols(symbol_to_id)
     logging.info(f"Fetched and matched symbols: {fetched_symbols}")
     
-    # Assuming prices is a dictionary structured as {symbol: {exchange: price}}
-    prices = {symbol: {} for symbol in fetched_symbols}  # Initialize prices dictionary
+    # Initialize prices dictionary structured as {symbol: {exchange: price}}
+    prices = {symbol: {} for symbol in fetched_symbols}
 
     # Fetch prices for each symbol from the exchanges
     for symbol in fetched_symbols:
         for exchange in exchanges:
             # Simulate fetching price for the symbol from the exchange
-            prices[symbol][exchange] = fetch_price_from_exchange(symbol, exchange)  # Define this function as needed
+            prices[symbol][exchange] = fetch_price_from_exchange(symbol, exchange)
 
     return fetched_symbols, prices  # Return both symbols and prices
+
+def prepare_chart_data(prices):
+    """Prepare data for chart visualization."""
+    chart_data = []
+    for symbol, exchanges in prices.items():
+        for exchange, price in exchanges.items():
+            # Simulate a time value for demonstration purposes
+            time_value = "2023-10-01T00:00:00Z"
+            chart_data.append({"symbol": symbol, "exchange": exchange, "time": time_value, "value": price})
+    return chart_data
+
+def fetch_price_from_exchange(symbol, exchange):
+    """Simulate fetching price for a symbol from an exchange."""
+    # Placeholder function to simulate price fetching
+    # In a real scenario, this would involve API calls to the exchange
+    return 100.0  # Return a dummy price for simulation purposes
 def main():
     """Fetch prices for all mapped symbols and return them."""
     symbol_to_id = load_symbol_mapping("symbols.txt")  # This should be a dictionary

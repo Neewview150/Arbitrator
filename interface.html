@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arbitrage Opportunities</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: #f4f4f9;
+        }
+        header {
+            background-color: #333;
+            color: #fff;
+            width: 100%;
+            padding: 10px 0;
+            text-align: center;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+        }
+        .chart-container {
+            position: relative;
+            margin: 20px 0;
+            height: 400px;
+            width: 100%;
+        }
+        .arbitrage-list {
+            list-style-type: none;
+            padding: 0;
+        }
+        .arbitrage-item {
+            background-color: #fff;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Arbitrage Opportunities</h1>
+    </header>
+    <div class="container">
+        <div class="chart-container">
+            <canvas id="priceChart"></canvas>
+        </div>
+        <h2>Arbitrage Opportunities</h2>
+        <ul id="arbitrageList" class="arbitrage-list"></ul>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Fetch data from the backend
+            fetch('/api/data')
+                .then(response => response.json())
+                .then(data => {
+                    renderChart(data.prices);
+                    renderArbitrageOpportunities(data.arbitrageOpportunities);
+                })
+                .catch(error => console.error('Error fetching data:', error));
+
+            function renderChart(prices) {
+                const ctx = document.getElementById('priceChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: prices.map(price => price.time),
+                        datasets: [{
+                            label: 'Price',
+                            data: prices.map(price => price.value),
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 2,
+                            fill: false
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    unit: 'minute'
+                                }
+                            },
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+
+            function renderArbitrageOpportunities(opportunities) {
+                const arbitrageList = document.getElementById('arbitrageList');
+                opportunities.forEach(opportunity => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'arbitrage-item';
+                    listItem.textContent = `Symbol: ${opportunity.symbol}, Buy on: ${opportunity.buyExchange}, Sell on: ${opportunity.sellExchange}, Profit: ${opportunity.profit}`;
+                    arbitrageList.appendChild(listItem);
+                });
+            }
+        });
+    </script>
+</body>
+</html>
