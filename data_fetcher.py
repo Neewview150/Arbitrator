@@ -7,7 +7,7 @@ from typing import Dict
 logging.basicConfig(level=logging.INFO)
 
 # CoinGecko API endpoint
-coingecko_api = "https://api.coingecko.com/api/v3"
+coingecko_api = "https://aupi.coingecko.com/api/v3"
 
 
 # Poloniex API endpoint
