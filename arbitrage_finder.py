@@ -1,12 +1,8 @@
 import logging
 import requests
-from typing import List, Dict
-import logging
-import requests
+import json
 from typing import List, Dict
 from data_fetcher import fetch_and_return_data
-from web3 import Web3
-from web3.middleware import geth_poa_middleware
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
@@ -111,9 +107,17 @@ def scan_arbitrage_opportunities(api_key: str, api_secret: str) -> List[Dict[str
     opportunities = identify_arbitrage_opportunities(market_data)
     return opportunities
 
+def load_abi(file_path):
+    """Load ABI from a JSON file."""
+    with open(file_path, 'r') as abi_file:
+        return json.load(abi_file)
+
 def execute_trade(opportunity, contract_address, provider_url):
     """Execute trade using flash loans."""
     try:
+        # Load the ABI
+        abi = load_abi('abi.json')
+
         # Connect to the blockchain
         web3 = Web3(Web3.HTTPProvider(provider_url))
         web3.middleware_onion.inject(geth_poa_middleware, layer=0)
@@ -123,7 +127,7 @@ def execute_trade(opportunity, contract_address, provider_url):
             return
 
         # Load the flash loan contract
-        contract = web3.eth.contract(address=contract_address, abi=FLASH_LOAN_CONTRACT_ABI)
+        contract = web3.eth.contract(address=contract_address, abi=abi)
 
         # Prepare transaction parameters
         account = web3.eth.account.from_key('YOUR_PRIVATE_KEY')  # Replace with secure key management
@@ -167,24 +171,12 @@ def write_successful_arbitrages_to_file(opportunities):
         for opportunity in opportunities:
             file.write(f"{opportunity}\n")
 
-FLASH_LOAN_CONTRACT_ABI = [
-    {
-        "constant": False,
-        "inputs": [
-            {"name": "amount", "type": "uint256"},
-            {"name": "tokens", "type": "string[]"}
-        ],
-        "name": "executeFlashLoan",
-        "outputs": [],
-        "payable": False,
-        "stateMutability": "nonpayable",
-        "type": "function"
-    }
-]
-
 def execute_arbitrage(opportunity, contract_address, provider_url):
     """Execute arbitrage using a flash loan."""
     try:
+        # Load the ABI
+        abi = load_abi('abi.json')
+
         # Connect to the blockchain
         web3 = Web3(Web3.HTTPProvider(provider_url))
         web3.middleware_onion.inject(geth_poa_middleware, layer=0)
@@ -194,7 +186,7 @@ def execute_arbitrage(opportunity, contract_address, provider_url):
             return
 
         # Load the flash loan contract
-        contract = web3.eth.contract(address=contract_address, abi=FLASH_LOAN_CONTRACT_ABI)
+        contract = web3.eth.contract(address=contract_address, abi=abi)
 
         # Prepare transaction parameters
         account = web3.eth.account.from_key('YOUR_PRIVATE_KEY')  # Replace with secure key management
