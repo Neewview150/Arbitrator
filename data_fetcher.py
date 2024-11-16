@@ -82,16 +82,22 @@ def fetch_and_return_data(symbol_to_id):
     fetched_symbols = fetch_all_mapped_symbols(symbol_to_id)
     logging.info(f"Fetched and matched symbols: {fetched_symbols}")
     
-    # Assuming prices is a dictionary structured as {symbol: {exchange: price}}
-    prices = {symbol: {} for symbol in fetched_symbols}  # Initialize prices dictionary
+    # Initialize prices dictionary structured as {symbol: {exchange: price}}
+    prices = {symbol: {} for symbol in fetched_symbols}
 
     # Fetch prices for each symbol from the exchanges
     for symbol in fetched_symbols:
         for exchange in exchanges:
             # Simulate fetching price for the symbol from the exchange
-            prices[symbol][exchange] = fetch_price_from_exchange(symbol, exchange)  # Define this function as needed
+            prices[symbol][exchange] = fetch_price_from_exchange(symbol, exchange)
 
     return fetched_symbols, prices  # Return both symbols and prices
+
+def fetch_price_from_exchange(symbol, exchange):
+    """Simulate fetching price for a symbol from an exchange."""
+    # Placeholder function to simulate price fetching
+    # In a real scenario, this would involve API calls to the exchange
+    return 100.0  # Return a dummy price for simulation purposes
 def main():
     """Fetch prices for all mapped symbols and return them."""
     symbol_to_id = load_symbol_mapping("symbols.txt")  # This should be a dictionary

@@ -6,7 +6,7 @@ from data_fetcher import fetch_and_return_data
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
 
-def find_direct_arbitrage_opportunities(symbols, symbol_to_id, prices):
+def find_direct_arbitrage_opportunities(symbols, symbol_to_id, prices, fee_percentage=0.002):
     """Find direct arbitrage opportunities between exchanges."""
     arbitrage_opportunities = []
     for symbol in symbols:
@@ -16,11 +16,12 @@ def find_direct_arbitrage_opportunities(symbols, symbol_to_id, prices):
                     price1 = prices[symbol][exchange1]
                     price2 = prices[symbol][exchange2]
                     if price1 > price2:
-                        arbitrage_opportunities.append((symbol, exchange1, exchange2, price1, price2))
+                        profit = simulate_trade(symbol, symbol, symbol, exchange1, exchange2, exchange2, price1, price2, price2, fee_percentage)
+                        if profit > 0:
+                            arbitrage_opportunities.append((symbol, exchange1, exchange2, price1, price2, profit))
     return arbitrage_opportunities
-
 def find_triangular_arbitrage_opportunities(symbols, symbol_to_id, prices, fee_percentage=0.002):
-    """Find triangular arbitrage opportunities on Poloniex, ensuring all symbols are distinct."""
+    """Find triangular arbitrage opportunities between exchanges, ensuring all symbols are distinct."""
     triangular_arbitrage_opportunities = []
     
     for symbol1 in symbols:
@@ -28,25 +29,23 @@ def find_triangular_arbitrage_opportunities(symbols, symbol_to_id, prices, fee_p
             for symbol3 in symbols:
                 # Ensure all symbols are distinct
                 if symbol1 != symbol2 and symbol2 != symbol3 and symbol1 != symbol3:
-                    price1 = prices[symbol1]['poloniex']
-                    price2 = prices[symbol2]['poloniex']
-                    price3 = prices[symbol3]['poloniex']
+                    for exchange1 in exchanges:
+                        for exchange2 in exchanges:
+                            for exchange3 in exchanges:
+                                # Ensure all exchanges are distinct
+                                if exchange1 != exchange2 and exchange2 != exchange3 and exchange1 != exchange3:
+                                    price1 = prices[symbol1][exchange1]
+                                    price2 = prices[symbol2][exchange2]
+                                    price3 = prices[symbol3][exchange3]
 
-                    if price1 > 0 and price2 > 0 and price3 > 0:
-                        # Calculate potential profit without fees
-                        profit_without_fees = (price1 / price2) * price3
-                        
-                        # Apply fees
-                        total_fee = (fee_percentage * (price1 + price2 + price3))
-                        profit_with_fees = profit_without_fees - total_fee
-                        
-                        # Check if the profit is positive after fees
-                        if profit_with_fees > 0:
-                            profit_percentage = (profit_with_fees / total_fee) * 100
-                            if profit_percentage > 1:  # Set a threshold for profitability
-                                triangular_arbitrage_opportunities.append(
-                                    (symbol1, symbol2, symbol3, 'poloniex', 'poloniex', 'poloniex', price1, price2, price3, profit_with_fees)
-                                )
+                                    if price1 > 0 and price2 > 0 and price3 > 0:
+                                        profit = simulate_trade(symbol1, symbol2, symbol3, exchange1, exchange2, exchange3, price1, price2, price3, fee_percentage)
+                                        
+                                        # Check if the profit is positive
+                                        if profit > 0:
+                                            triangular_arbitrage_opportunities.append(
+                                                (symbol1, symbol2, symbol3, exchange1, exchange2, exchange3, price1, price2, price3, profit)
+                                            )
     return triangular_arbitrage_opportunities
 
 def simulate_trade(symbol1, symbol2, symbol3, exchange1, exchange2, exchange3, price1, price2, price3, fee_percentage):
