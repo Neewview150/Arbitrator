@@ -8,3 +8,4 @@ ccxt==1.94.0
 numpy==1.23.5
 scipy==1.10.1
 ta==0.10.1
+backtrader==1.9.76.123

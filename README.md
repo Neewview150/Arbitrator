@@ -25,6 +25,33 @@ To set up the project, follow these steps:
    pip install -r requirements.txt
    ```
 
+## Backtesting
+
+To backtest a trading strategy using historical data, follow these steps:
+
+### Prerequisites
+
+- Ensure you have set up the environment and installed all dependencies as described in the Installation section.
+
+### Running the Backtest
+
+1. **Fetch Historical Data**:
+   The backtest uses historical data for the USD/EUR pair. Ensure you have internet access to fetch this data.
+
+2. **Execute the Backtest Script**:
+   Run the following command to start the backtest:
+
+   ```bash
+   python backtest_strategy.py
+   ```
+
+   This script will execute a simple moving average strategy on the fetched data.
+
+### Interpreting Results
+
+- **Logs**: The script logs buy and sell actions with the corresponding prices.
+- **Plot**: After the backtest completes, a plot will be displayed showing the price data and the moving average.
+
 ## Usage
 ## USD/EUR Trading Strategy
 
