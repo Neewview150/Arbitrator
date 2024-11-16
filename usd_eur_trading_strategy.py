@@ -1,6 +1,8 @@
 import logging
 import time
 from typing import Dict
+import backtrader as bt
+from data_fetcher import fetch_historical_data
 
 # Configure logging
 logging.basicConfig(filename='trade_log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
@@ -35,6 +37,41 @@ def simulate_trade(trade_amount: float, leverage: bool = False) -> Dict[str, flo
     logging.info(f"Simulating trade: Amount = ${trade_amount}, Leverage = {leverage}")
     return {"amount": trade_amount, "profit": trade_amount * 0.01}  # Simulate a 1% profit
 
+class SimpleMovingAverageStrategy(bt.Strategy):
+    params = (
+        ('sma_period', 15),
+    )
+
+    def __init__(self):
+        self.sma = bt.indicators.SimpleMovingAverage(self.data.close, period=self.params.sma_period)
+
+    def next(self):
+        if not self.position:
+            if self.data.close[0] > self.sma[0]:
+                self.buy(size=100)
+                logging.info(f"Buying at {self.data.close[0]}")
+        else:
+            if self.data.close[0] < self.sma[0]:
+                self.sell(size=100)
+                logging.info(f"Selling at {self.data.close[0]}")
+
+def run_backtest():
+    data = fetch_historical_data()
+    if data is None:
+        logging.error("No data fetched for backtesting.")
+        return
+
+    data_feed = bt.feeds.PandasData(dataname=data)
+    cerebro = bt.Cerebro()
+    cerebro.addstrategy(SimpleMovingAverageStrategy)
+    cerebro.adddata(data_feed)
+    cerebro.broker.setcash(10000.0)
+
+    logging.info("Starting backtest...")
+    cerebro.run()
+    logging.info("Backtest completed.")
+    cerebro.plot()
+
 def trade_loop(simulate: bool = True):
     """Continuously execute or simulate trades until stopped by the user."""
     balance = 1000  # Starting balance in USD
@@ -56,5 +93,9 @@ def trade_loop(simulate: bool = True):
             break
 
 if __name__ == "__main__":
-    simulate_mode = input("Enter 's' to simulate trades or 'e' to execute trades: ").strip().lower() == 's'
-    trade_loop(simulate=simulate_mode)
+    mode = input("Enter 's' to simulate trades, 'e' to execute trades, or 'b' for backtesting: ").strip().lower()
+    if mode == 'b':
+        run_backtest()
+    else:
+        simulate_mode = (mode == 's')
+        trade_loop(simulate=simulate_mode)

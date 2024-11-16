@@ -53,6 +53,34 @@ To backtest a trading strategy using historical data, follow these steps:
 - **Plot**: After the backtest completes, a plot will be displayed showing the price data and the moving average.
 
 ## Usage
+
+## Backtesting the USD/EUR Trading Strategy
+
+This section provides instructions on how to backtest the USD/EUR trading strategy using historical data.
+
+### Prerequisites
+
+- Ensure you have set up the environment and installed all dependencies as described in the Installation section.
+
+### Running the Backtest
+
+1. **Fetch Historical Data**:
+   The backtest uses historical data for the USD/EUR pair. Ensure you have internet access to fetch this data.
+
+2. **Execute the Backtest Script**:
+   Run the following command to start the backtest:
+
+   ```bash
+   python usd_eur_trading_strategy.py
+   ```
+
+   You will be prompted to choose between simulating trades, executing trades, or running a backtest. Enter 'b' for backtesting.
+
+### Interpreting Results
+
+- **Logs**: The script logs buy and sell actions with the corresponding prices.
+- **Plot**: After the backtest completes, a plot will be displayed showing the price data and the moving average.
+
 ## USD/EUR Trading Strategy
 
 This section describes a trading strategy for the USD/EUR currency pair using leverage. The strategy aims to exploit short-term price movements with a focus on risk management and ethical trading practices.
