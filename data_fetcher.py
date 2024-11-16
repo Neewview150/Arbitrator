@@ -122,7 +122,14 @@ def fetch_historical_data():
         # Log the fetched data
         logging.info(f"Fetched historical data for USD/EUR: {data.head()}")
         
-        return data
+        # Ensure data is in a format that can be iterated over
+        if data is not None and not data.empty:
+            data.reset_index(inplace=True)
+            logging.info("Historical data is ready for iteration.")
+            return data
+        else:
+            logging.error("No data fetched or data is empty.")
+            return None
     except Exception as e:
         logging.error(f"Error fetching historical data: {e}")
         return None

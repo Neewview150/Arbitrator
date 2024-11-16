@@ -3,6 +3,7 @@ from typing import Dict
 import backtrader as bt
 import pandas as pd
 import requests
+from data_fetcher import fetch_historical_data
 
 # Configure logging
 logging.basicConfig(filename='trade_log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
@@ -54,6 +55,22 @@ def simulate_trade(trade_amount: float, leverage: bool = False) -> Dict[str, flo
         trade_amount = calculate_leverage(trade_amount)
     logging.info(f"Simulating trade: Amount = ${trade_amount}, Leverage = {leverage}")
     return {"amount": trade_amount, "profit": trade_amount * 0.01}  # Simulate a 1% profit
+
+def simulate_trades_with_historical_data():
+    """Simulate trades using historical data."""
+    data = fetch_historical_data()  # Use the newly defined function
+    if data is None:
+        logging.error("No historical data available for simulation.")
+        return
+
+    balance = 1000  # Starting balance in USD
+    for index, row in data.iterrows():
+        if risk_management(TRADE_AMOUNT, balance):
+            result = simulate_trade(TRADE_AMOUNT, leverage=True)
+            balance += result["profit"]
+            logging.info(f"Simulated trade result: {result}, New balance: ${balance}")
+        else:
+            logging.warning("Trade exceeds risk management limits.")
 
 class SimpleMovingAverageStrategy(bt.Strategy):
     params = (
