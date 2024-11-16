@@ -1,7 +1,8 @@
 import logging
 from typing import Dict
 import backtrader as bt
-from data_fetcher import fetch_historical_data
+import pandas as pd
+import requests
 
 # Configure logging
 logging.basicConfig(filename='trade_log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
@@ -11,7 +12,34 @@ LEVERAGE = 100
 TRADE_AMOUNT = 2  # Base trade amount in USD
 MAX_LEVERAGE_TRADE = TRADE_AMOUNT * LEVERAGE
 
-def calculate_leverage(amount: float) -> float:
+def fetch_historical_data():
+    """Fetch historical data for the USD/EUR pair for the past two months."""
+    try:
+        # Define the API endpoint and parameters
+        api_url = "https://api.exchangerate.host/timeseries"
+        params = {
+            "base": "USD",
+            "symbols": "EUR",
+            "start_date": "2023-08-01",
+            "end_date": "2023-10-01"
+        }
+        
+        # Make the API request
+        response = requests.get(api_url, params=params)
+        response.raise_for_status()
+        
+        # Parse the response JSON and convert it to a DataFrame
+        data = response.json()
+        rates = data.get("rates", {})
+        df = pd.DataFrame.from_dict(rates, orient='index')
+        df.index = pd.to_datetime(df.index)
+        df.columns = ["close"]
+        
+        logging.info(f"Fetched historical data: {df.head()}")
+        return df
+    except Exception as e:
+        logging.error(f"Error fetching historical data: {e}")
+        return None
     """Calculate the leveraged amount."""
     return amount * LEVERAGE
 
@@ -46,7 +74,7 @@ class SimpleMovingAverageStrategy(bt.Strategy):
                 logging.info(f"Selling at {self.data.close[0]}")
 
 def run_backtest():
-    data = fetch_historical_data()
+    data = fetch_historical_data()  # Use the newly defined function
     if data is None:
         logging.error("No data fetched for backtesting.")
         return
@@ -64,7 +92,7 @@ def run_backtest():
 
 def simulate_trades_with_historical_data():
     """Simulate trades using historical data."""
-    data = fetch_historical_data()
+    data = fetch_historical_data()  # Use the newly defined function
     if data is None:
         logging.error("No historical data available for simulation.")
         return
