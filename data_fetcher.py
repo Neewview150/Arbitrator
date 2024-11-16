@@ -1,6 +1,8 @@
 import time
 import requests
 import logging
+import pandas as pd
+import yfinance as yf
 from typing import Dict
 
 # Configure logging
@@ -108,7 +110,22 @@ def fetch_price_from_exchange(symbol, exchange):
     # Placeholder function to simulate price fetching
     # In a real scenario, this would involve API calls to the exchange
     return 100.0  # Return a dummy price for simulation purposes
-def main():
+def fetch_historical_data():
+    """Fetch historical data for the USD/EUR pair for the past two months."""
+    try:
+        # Define the ticker symbol for USD/EUR
+        ticker = 'EURUSD=X'
+        
+        # Fetch data for the past two months
+        data = yf.download(ticker, period='2mo', interval='1d')
+        
+        # Log the fetched data
+        logging.info(f"Fetched historical data for USD/EUR: {data.head()}")
+        
+        return data
+    except Exception as e:
+        logging.error(f"Error fetching historical data: {e}")
+        return None
     """Fetch prices for all mapped symbols and return them."""
     symbol_to_id = load_symbol_mapping("symbols.txt")  # This should be a dictionary
     logging.info(f"Loaded symbol_to_id: {symbol_to_id} (Type: {type(symbol_to_id).__name__})")
