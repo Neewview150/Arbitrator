@@ -1,12 +1,18 @@
+
 import time
 import requests
 import logging
+from typing import Dict
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 
 # CoinGecko API endpoint
 coingecko_api = "https://api.coingecko.com/api/v3"
+
+
+# Poloniex API endpoint
+POLONIEX_API_URL = "https://poloniex.com/public?command=returnTicker"
 
 # List of exchanges to use
 exchanges = ["lbank", "kraken", "poloniex", "uniswap"]
@@ -83,6 +89,17 @@ def fetch_symbols(exchange, symbol_to_id, limit=10):
             logging.error(f"Error fetching symbols : {e}")
 
     return matched_symbols  # Return matched symbols even if the API request fails after retries
+
+
+def fetch_market_data() -> Dict[str, Dict[str, float]]:
+    """Fetch market data from Poloniex."""
+    try:
+        response = requests.get(POLONIEX_API_URL)
+        response.raise_for_status()
+        return response.json()
+    except requests.RequestException as e:
+        logging.error(f"Error fetching market data: {e}")
+        return {}
 
 def fetch_and_return_data(symbol_to_id):
     """Fetch prices for all mapped symbols and return them."""

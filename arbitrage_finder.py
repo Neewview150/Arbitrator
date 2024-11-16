@@ -1,4 +1,6 @@
 import logging
+import requests
+from typing import List, Dict
 from data_fetcher import fetch_and_return_data
 from web3 import Web3
 from web3.middleware import geth_poa_middleware
@@ -71,6 +73,43 @@ def simulate_trade(symbol1, symbol2, symbol3, exchange1, exchange2, exchange3, p
     profit = final_amount_symbol2 - investment  # Profit from the trade
 
     return profit  # Return the profit amount
+
+def identify_arbitrage_opportunities(market_data: Dict[str, Dict[str, float]]) -> List[Dict[str, str]]:
+    """Identify triangular arbitrage opportunities."""
+    opportunities = []
+    pairs = list(market_data.keys())
+
+    for i, pair1 in enumerate(pairs):
+        for j, pair2 in enumerate(pairs):
+            if i == j:
+                continue
+            for k, pair3 in enumerate(pairs):
+                if k == i or k == j:
+                    continue
+
+                if pair1.split('_')[1] == pair2.split('_')[0] and pair2.split('_')[1] == pair3.split('_')[0] and pair3.split('_')[1] == pair1.split('_')[0]:
+                    rate1 = market_data[pair1]['last']
+                    rate2 = market_data[pair2]['last']
+                    rate3 = market_data[pair3]['last']
+
+                    profit = (1 / rate1) * rate2 * rate3 - 1
+                    if profit > 0:
+                        opportunities.append({
+                            "pair1": pair1,
+                            "pair2": pair2,
+                            "pair3": pair3,
+                            "profit": profit
+                        })
+    return opportunities
+
+def scan_arbitrage_opportunities(api_key: str, api_secret: str) -> List[Dict[str, str]]:
+    """Scan for arbitrage opportunities."""
+    market_data = fetch_market_data(api_key, api_secret)
+    if not market_data:
+        return []
+
+    opportunities = identify_arbitrage_opportunities(market_data)
+    return opportunities
 
 def write_successful_arbitrages_to_file(opportunities):
     """Write successful arbitrage opportunities to a text file."""
