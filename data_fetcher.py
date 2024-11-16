@@ -4,6 +4,7 @@ import logging
 import pandas as pd
 import yfinance as yf
 from typing import Dict
+from datetime import datetime
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -79,6 +80,21 @@ def fetch_market_data() -> Dict[str, Dict[str, float]]:
         logging.error(f"Error fetching market data: {e}")
         return {}
 
+def fetch_real_time_price():
+    """Fetch real-time price for the USD/EUR pair."""
+    try:
+        api_url = "https://api.exchangerate.host/latest"
+        params = {"base": "USD", "symbols": "EUR"}
+        response = requests.get(api_url, params=params)
+        response.raise_for_status()
+        data = response.json()
+        price = data["rates"]["EUR"]
+        logging.info(f"Fetched real-time price: {price}")
+        return price
+    except Exception as e:
+        logging.error(f"Error fetching real-time price: {e}")
+        return None
+
 def fetch_and_return_data(symbol_to_id):
     """Fetch prices for all mapped symbols and return them."""
     fetched_symbols = fetch_all_mapped_symbols(symbol_to_id)
@@ -125,6 +141,8 @@ def fetch_historical_data():
         # Ensure data is in a format that can be iterated over
         if data is not None and not data.empty:
             data.reset_index(inplace=True)
+            data['time'] = data['Date'].apply(lambda x: datetime.strftime(x, '%Y-%m-%dT%H:%M:%SZ'))
+            data.rename(columns={'Close': 'close'}, inplace=True)
             logging.info("Historical data is ready for iteration.")
             return data
         else:

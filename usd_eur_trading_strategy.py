@@ -4,42 +4,30 @@ import backtrader as bt
 import pandas as pd
 import requests
 from data_fetcher import fetch_historical_data
+from datetime import datetime
+from colorama import Fore, Style
 
 # Configure logging
-logging.basicConfig(filename='trade_log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
+logging.basicConfig(filename='trade_log.txt', level=logging.INFO, format='%(asctime)s - %(message)s', filemode='w')
 
 # Constants
 LEVERAGE = 100
 TRADE_AMOUNT = 2  # Base trade amount in USD
 MAX_LEVERAGE_TRADE = TRADE_AMOUNT * LEVERAGE
 
-def fetch_historical_data():
-    """Fetch historical data for the USD/EUR pair for the past two months."""
+def fetch_real_time_price():
+    """Fetch real-time price for the USD/EUR pair."""
     try:
-        # Define the API endpoint and parameters
-        api_url = "https://api.exchangerate.host/timeseries"
-        params = {
-            "base": "USD",
-            "symbols": "EUR",
-            "start_date": "2023-08-01",
-            "end_date": "2023-10-01"
-        }
-        
-        # Make the API request
+        api_url = "https://api.exchangerate.host/latest"
+        params = {"base": "USD", "symbols": "EUR"}
         response = requests.get(api_url, params=params)
         response.raise_for_status()
-        
-        # Parse the response JSON and convert it to a DataFrame
         data = response.json()
-        rates = data.get("rates", {})
-        df = pd.DataFrame.from_dict(rates, orient='index')
-        df.index = pd.to_datetime(df.index)
-        df.columns = ["close"]
-        
-        logging.info(f"Fetched historical data: {df.head()}")
-        return df
+        price = data["rates"]["EUR"]
+        logging.info(f"Fetched real-time price: {price}")
+        return price
     except Exception as e:
-        logging.error(f"Error fetching historical data: {e}")
+        logging.error(f"Error fetching real-time price: {e}")
         return None
     """Calculate the leveraged amount."""
     return amount * LEVERAGE
@@ -49,28 +37,40 @@ def risk_management(trade_amount: float, balance: float) -> bool:
     risk_threshold = 0.02  # Risk 2% of the balance
     return trade_amount <= balance * risk_threshold
 
-def simulate_trade(trade_amount: float, leverage: bool = False) -> Dict[str, float]:
-    """Simulate a trade with or without leverage."""
+def execute_trade(trade_amount: float, leverage: bool = False) -> Dict[str, float]:
+    """Execute a trade with or without leverage."""
     if leverage:
         trade_amount = calculate_leverage(trade_amount)
-    logging.info(f"Simulating trade: Amount = ${trade_amount}, Leverage = {leverage}")
-    return {"amount": trade_amount, "profit": trade_amount * 0.01}  # Simulate a 1% profit
+    price = fetch_real_time_price()
+    if price is None:
+        logging.error("Failed to fetch real-time price. Trade aborted.")
+        return {"amount": 0, "profit": 0}
+    logging.info(f"Executing trade: Amount = ${trade_amount}, Leverage = {leverage}, Price = {price}")
+    # Simulate a 1% profit
+    return {"amount": trade_amount, "profit": trade_amount * 0.01}
 
-def simulate_trades_with_historical_data():
-    """Simulate trades using historical data."""
-    data = fetch_historical_data()  # Use the newly defined function
-    if data is None:
-        logging.error("No historical data available for simulation.")
-        return
-
+def trade_loop(simulate: bool = True):
+    """Continuously execute or simulate trades until stopped by the user."""
     balance = 1000  # Starting balance in USD
-    for index, row in data.iterrows():
-        if risk_management(TRADE_AMOUNT, balance):
-            result = simulate_trade(TRADE_AMOUNT, leverage=True)
+    open_orders = 0
+    while True:
+        if open_orders < 5 and risk_management(TRADE_AMOUNT, balance):
+            if simulate:
+                result = simulate_trade(TRADE_AMOUNT, leverage=True)
+            else:
+                result = execute_trade(TRADE_AMOUNT, leverage=True)
             balance += result["profit"]
-            logging.info(f"Simulated trade result: {result}, New balance: ${balance}")
+            open_orders += 1
+            logging.info(f"Trade result: {result}, New balance: ${balance}")
+            print(Fore.GREEN + f"Trade executed: {result}, New balance: ${balance}" + Style.RESET_ALL)
         else:
-            logging.warning("Trade exceeds risk management limits.")
+            logging.warning("Trade exceeds risk management limits or max open orders reached.")
+        
+        print("Press Enter to stop or wait for the next trade...")
+        try:
+            time.sleep(5)  # Wait for 5 seconds before the next trade
+        except KeyboardInterrupt:
+            break
 
 class SimpleMovingAverageStrategy(bt.Strategy):
     params = (
@@ -128,6 +128,8 @@ if __name__ == "__main__":
     if mode == 'b':
         run_backtest()
     elif mode == 's':
-        simulate_trades_with_historical_data()
+        trade_loop(simulate=True)
+    elif mode == 'e':
+        trade_loop(simulate=False)
     else:
-        logging.warning("Live execution mode is not supported in this simulation-focused version.")
+        logging.warning("Invalid mode selected.")
