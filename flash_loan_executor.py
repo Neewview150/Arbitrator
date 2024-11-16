@@ -8,7 +8,6 @@ logging.basicConfig(level=logging.INFO)
 # Constants for Equalizer Finance
 CONTRACT_ADDRESS = '0xYourContractAddressHere'  # Replace with actual contract address
 PROVIDER_URL = 'https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID'  # Replace with your provider URL
-FLASH_LOAN_CONTRACT_ABI = [
     {
         "constant": true,
         "inputs": [],
