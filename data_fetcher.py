@@ -93,6 +93,16 @@ def fetch_and_return_data(symbol_to_id):
 
     return fetched_symbols, prices  # Return both symbols and prices
 
+def prepare_chart_data(prices):
+    """Prepare data for chart visualization."""
+    chart_data = []
+    for symbol, exchanges in prices.items():
+        for exchange, price in exchanges.items():
+            # Simulate a time value for demonstration purposes
+            time_value = "2023-10-01T00:00:00Z"
+            chart_data.append({"symbol": symbol, "exchange": exchange, "time": time_value, "value": price})
+    return chart_data
+
 def fetch_price_from_exchange(symbol, exchange):
     """Simulate fetching price for a symbol from an exchange."""
     # Placeholder function to simulate price fetching

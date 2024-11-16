@@ -164,6 +164,25 @@ def prompt_user_for_trade(opportunity):
     choice = input("Do you want to execute this trade? (yes/no): ")
     return choice.lower() == 'yes'
 
+def format_arbitrage_opportunities(opportunities):
+    """Format arbitrage opportunities into a JSON structure."""
+    formatted_opportunities = []
+    for opportunity in opportunities:
+        formatted_opportunity = {
+            "symbol1": opportunity[0],
+            "symbol2": opportunity[1],
+            "symbol3": opportunity[2],
+            "exchange1": opportunity[3],
+            "exchange2": opportunity[4],
+            "exchange3": opportunity[5],
+            "price1": opportunity[6],
+            "price2": opportunity[7],
+            "price3": opportunity[8],
+            "profit": opportunity[9]
+        }
+        formatted_opportunities.append(formatted_opportunity)
+    return formatted_opportunities
+
 def write_successful_arbitrages_to_file(opportunities):
     """Write successful arbitrage opportunities to a text file."""
     with open("arbitrage_opportunities.txt", "w") as file:
