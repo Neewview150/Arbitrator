@@ -9,6 +9,7 @@ from web3.middleware import geth_poa_middleware
 def find_direct_arbitrage_opportunities(symbols, symbol_to_id, prices, fee_percentage=0.002):
     """Find direct arbitrage opportunities between exchanges."""
     arbitrage_opportunities = []
+    current_time = time.time()
     for symbol in symbols:
         for exchange1 in exchanges:
             for exchange2 in exchanges:
@@ -18,7 +19,9 @@ def find_direct_arbitrage_opportunities(symbols, symbol_to_id, prices, fee_perce
                     if price1 > price2:
                         profit = simulate_trade(symbol, symbol, symbol, exchange1, exchange2, exchange2, price1, price2, price2, fee_percentage)
                         if profit > 0:
-                            arbitrage_opportunities.append((symbol, exchange1, exchange2, price1, price2, profit))
+                            duration = current_time - start_time
+                            profitability_percentage = (profit / investment) * 100
+                            arbitrage_opportunities.append((symbol, exchange1, exchange2, price1, price2, profit, profitability_percentage, duration))
     return arbitrage_opportunities
 def find_triangular_arbitrage_opportunities(symbols, symbol_to_id, prices, fee_percentage=0.002):
     """Find triangular arbitrage opportunities between exchanges, ensuring all symbols are distinct."""
@@ -43,8 +46,10 @@ def find_triangular_arbitrage_opportunities(symbols, symbol_to_id, prices, fee_p
                                         
                                         # Check if the profit is positive
                                         if profit > 0:
+                                            duration = current_time - start_time
+                                            profitability_percentage = (profit / investment) * 100
                                             triangular_arbitrage_opportunities.append(
-                                                (symbol1, symbol2, symbol3, exchange1, exchange2, exchange3, price1, price2, price3, profit)
+                                                (symbol1, symbol2, symbol3, exchange1, exchange2, exchange3, price1, price2, price3, profit, profitability_percentage, duration)
                                             )
     return triangular_arbitrage_opportunities
 
@@ -116,6 +121,12 @@ def execute_trade(opportunity, contract_address, provider_url):
     try:
         # Load the ABI
         abi = load_abi('abi.json')
+        executed_trades.append({
+            "id": len(executed_trades) + 1,
+            "outcome": "success",
+            "profit": opportunity['profit'],
+            "timestamp": time.time()
+        })
 
         # Connect to the blockchain
         web3 = Web3(Web3.HTTPProvider(provider_url))
@@ -178,10 +189,18 @@ def format_arbitrage_opportunities(opportunities):
             "price1": opportunity[6],
             "price2": opportunity[7],
             "price3": opportunity[8],
-            "profit": opportunity[9]
+            "profit": opportunity[9],
+            "profitabilityPercentage": opportunity[10],
+            "duration": opportunity[11]
         }
         formatted_opportunities.append(formatted_opportunity)
     return formatted_opportunities
+
+def fetch_executed_trades():
+    """Fetch executed trades."""
+    return executed_trades
+
+executed_trades = []
 
 def write_successful_arbitrages_to_file(opportunities):
     """Write successful arbitrage opportunities to a text file."""

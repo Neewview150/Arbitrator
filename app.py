@@ -1,7 +1,7 @@
 from flask import Flask, jsonify, send_from_directory
 import logging
 from data_fetcher import fetch_and_return_data, prepare_chart_data
-from arbitrage_finder import find_direct_arbitrage_opportunities, find_triangular_arbitrage_opportunities, format_arbitrage_opportunities
+from arbitrage_finder import find_direct_arbitrage_opportunities, find_triangular_arbitrage_opportunities, format_arbitrage_opportunities, calculate_profitability_and_duration, fetch_executed_trades
 
 app = Flask(__name__)
 
@@ -39,13 +39,21 @@ def get_data():
         direct_arbitrage_opportunities = find_direct_arbitrage_opportunities(symbols, symbol_to_id, prices)
         triangular_arbitrage_opportunities = find_triangular_arbitrage_opportunities(symbols, symbol_to_id, prices)
         
+        # Calculate additional information for arbitrage opportunities
+        arbitrage_opportunities = direct_arbitrage_opportunities + triangular_arbitrage_opportunities
+        arbitrage_opportunities = calculate_profitability_and_duration(arbitrage_opportunities)
+        
+        # Fetch executed trades
+        executed_trades = fetch_executed_trades()
+        
         # Format arbitrage opportunities
-        arbitrage_opportunities = format_arbitrage_opportunities(direct_arbitrage_opportunities + triangular_arbitrage_opportunities)
+        formatted_arbitrage_opportunities = format_arbitrage_opportunities(arbitrage_opportunities)
         
         # Return data as JSON
         return jsonify({
             'prices': chart_data,
-            'arbitrageOpportunities': arbitrage_opportunities
+            'arbitrageOpportunities': formatted_arbitrage_opportunities,
+            'executedTrades': executed_trades
         })
     except Exception as e:
         logging.error(f"Unexpected error in /api/data endpoint: {e}")

@@ -56,6 +56,10 @@
         </div>
         <h2>Arbitrage Opportunities</h2>
         <ul id="arbitrageList" class="arbitrage-list"></ul>
+        <div id="executedTrades" class="executed-trades">
+            <h2>Executed Trades</h2>
+            <ul id="executedTradesList" class="arbitrage-list"></ul>
+        </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <script>
@@ -105,8 +109,30 @@
                 opportunities.forEach(opportunity => {
                     const listItem = document.createElement('li');
                     listItem.className = 'arbitrage-item';
-                    listItem.textContent = `Symbol: ${opportunity.symbol}, Buy on: ${opportunity.buyExchange}, Sell on: ${opportunity.sellExchange}, Profit: ${opportunity.profit}`;
+                    listItem.innerHTML = `
+                        <strong>Symbol:</strong> ${opportunity.symbol} <br>
+                        <strong>Buy on:</strong> ${opportunity.buyExchange} <br>
+                        <strong>Sell on:</strong> ${opportunity.sellExchange} <br>
+                        <strong>Profit:</strong> ${opportunity.profit} <br>
+                        <strong>Profitability %:</strong> ${opportunity.profitabilityPercentage} <br>
+                        <strong>Duration:</strong> ${opportunity.duration} <br>
+                    `;
                     arbitrageList.appendChild(listItem);
+                });
+            }
+
+            function renderExecutedTrades(trades) {
+                const executedTradesList = document.getElementById('executedTradesList');
+                trades.forEach(trade => {
+                    const listItem = document.createElement('li');
+                    listItem.className = 'arbitrage-item';
+                    listItem.innerHTML = `
+                        <strong>Trade ID:</strong> ${trade.id} <br>
+                        <strong>Outcome:</strong> ${trade.outcome} <br>
+                        <strong>Profit:</strong> ${trade.profit} <br>
+                        <strong>Timestamp:</strong> ${trade.timestamp} <br>
+                    `;
+                    executedTradesList.appendChild(listItem);
                 });
             }
         });
