@@ -1,5 +1,4 @@
 import backtrader as bt
-import pandas as pd
 import logging
 from data_fetcher import fetch_historical_data
 
@@ -30,35 +29,23 @@ class SimpleMovingAverageStrategy(bt.Strategy):
                 self.sell(size=100)  # Example sell size
                 logging.info(f"Selling at {self.data.close[0]}")
 
-def run_backtest():
-    # Fetch historical data
+def simulate_trades_with_historical_data():
+    """Simulate trades using historical data."""
     data = fetch_historical_data()
     if data is None:
-        logging.error("No data fetched for backtesting.")
+        logging.error("No historical data available for simulation.")
         return
 
-    # Convert the data to a format compatible with Backtrader
-    data_feed = bt.feeds.PandasData(dataname=data)
+    balance = 1000  # Starting balance in USD
+    for index, row in data.iterrows():
+        if row['Close'] > row['Open']:  # Example condition for buying
+            logging.info(f"Simulating buy at {row['Close']} on {index}")
+            balance += 10  # Simulate profit
+        elif row['Close'] < row['Open']:  # Example condition for selling
+            logging.info(f"Simulating sell at {row['Close']} on {index}")
+            balance -= 10  # Simulate loss
 
-    # Initialize the Cerebro engine
-    cerebro = bt.Cerebro()
-
-    # Add the strategy
-    cerebro.addstrategy(SimpleMovingAverageStrategy)
-
-    # Add the data feed
-    cerebro.adddata(data_feed)
-
-    # Set initial cash
-    cerebro.broker.setcash(10000.0)
-
-    # Run the backtest
-    logging.info("Starting backtest...")
-    cerebro.run()
-    logging.info("Backtest completed.")
-
-    # Plot the results
-    cerebro.plot()
+    logging.info(f"Final balance after simulation: ${balance}")
 
 if __name__ == '__main__':
-    run_backtest()
+    simulate_trades_with_historical_data()

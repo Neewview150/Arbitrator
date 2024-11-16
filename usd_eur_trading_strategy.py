@@ -1,5 +1,4 @@
 import logging
-import time
 from typing import Dict
 import backtrader as bt
 from data_fetcher import fetch_historical_data
@@ -20,15 +19,6 @@ def risk_management(trade_amount: float, balance: float) -> bool:
     """Ensure the trade does not exceed a certain percentage of the balance."""
     risk_threshold = 0.02  # Risk 2% of the balance
     return trade_amount <= balance * risk_threshold
-
-def execute_trade(trade_amount: float, leverage: bool = False) -> Dict[str, float]:
-    """Execute a trade with or without leverage."""
-    if leverage:
-        trade_amount = calculate_leverage(trade_amount)
-    # Simulate trade execution
-    logging.info(f"Executing trade: Amount = ${trade_amount}, Leverage = {leverage}")
-    # Here you would integrate with FBS API to execute the trade
-    return {"amount": trade_amount, "profit": trade_amount * 0.01}  # Simulate a 1% profit
 
 def simulate_trade(trade_amount: float, leverage: bool = False) -> Dict[str, float]:
     """Simulate a trade with or without leverage."""
@@ -72,30 +62,27 @@ def run_backtest():
     logging.info("Backtest completed.")
     cerebro.plot()
 
-def trade_loop(simulate: bool = True):
-    """Continuously execute or simulate trades until stopped by the user."""
+def simulate_trades_with_historical_data():
+    """Simulate trades using historical data."""
+    data = fetch_historical_data()
+    if data is None:
+        logging.error("No historical data available for simulation.")
+        return
+
     balance = 1000  # Starting balance in USD
-    while True:
+    for index, row in data.iterrows():
         if risk_management(TRADE_AMOUNT, balance):
-            if simulate:
-                result = simulate_trade(TRADE_AMOUNT, leverage=True)
-            else:
-                result = execute_trade(TRADE_AMOUNT, leverage=True)
+            result = simulate_trade(TRADE_AMOUNT, leverage=True)
             balance += result["profit"]
-            logging.info(f"Trade result: {result}, New balance: ${balance}")
+            logging.info(f"Simulated trade result: {result}, New balance: ${balance}")
         else:
             logging.warning("Trade exceeds risk management limits.")
-        
-        print("Press Enter to stop or wait for the next trade...")
-        try:
-            time.sleep(5)  # Wait for 5 seconds before the next trade
-        except KeyboardInterrupt:
-            break
 
 if __name__ == "__main__":
     mode = input("Enter 's' to simulate trades, 'e' to execute trades, or 'b' for backtesting: ").strip().lower()
     if mode == 'b':
         run_backtest()
+    elif mode == 's':
+        simulate_trades_with_historical_data()
     else:
-        simulate_mode = (mode == 's')
-        trade_loop(simulate=simulate_mode)
+        logging.warning("Live execution mode is not supported in this simulation-focused version.")

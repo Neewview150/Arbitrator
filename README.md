@@ -81,9 +81,9 @@ This section provides instructions on how to backtest the USD/EUR trading strate
 - **Logs**: The script logs buy and sell actions with the corresponding prices.
 - **Plot**: After the backtest completes, a plot will be displayed showing the price data and the moving average.
 
-## USD/EUR Trading Strategy
+## USD/EUR Trading Strategy Simulation
 
-This section describes a trading strategy for the USD/EUR currency pair using leverage. The strategy aims to exploit short-term price movements with a focus on risk management and ethical trading practices.
+This section describes how to simulate a trading strategy for the USD/EUR currency pair using historical data. The simulation aims to test the strategy's effectiveness over past market conditions.
 
 ### Purpose
 
@@ -118,20 +118,25 @@ The strategy is implemented in Python and uses a leverage of 100%. It includes f
    pip install -r requirements.txt
    ```
 
-### Running the Strategy
+### Running the Simulation
 
-To run the USD/EUR trading strategy, execute the following command:
+To simulate the USD/EUR trading strategy using historical data, execute the following command:
 
 ```bash
 python usd_eur_trading_strategy.py
 ```
 
-You will be prompted to choose between simulating trades or executing them. Enter 's' for simulation or 'e' for execution.
+You will be prompted to choose between simulating trades, executing trades, or running a backtest. Enter 's' for simulation using historical data.
 
-### Interpreting Results
+### Interpreting Simulation Results
 
-- **Trade Logs**: All trades are logged in `trade_log.txt` with details of each trade, including the amount, leverage, and profit.
-- **Balance Updates**: The script outputs the new balance after each trade, allowing you to track performance over time.
+- **Simulation Logs**: All simulated trades are logged in `trade_log.txt` with details of each trade, including the amount, leverage, and profit.
+- **Balance Updates**: The script outputs the new balance after each simulated trade, allowing you to track performance over the historical period.
+
+### Difference Between Live Trading and Historical Simulation
+
+- **Live Trading**: Involves executing trades in real-time using current market data. This mode is not supported in the current version.
+- **Historical Simulation**: Uses past market data to simulate trades and evaluate the strategy's performance without any financial risk.
 
 ## Usage
 
