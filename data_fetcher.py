@@ -1,6 +1,7 @@
 import time
 import requests
 import logging
+import os
 from typing import Dict
 
 # Configure logging
@@ -51,7 +52,13 @@ def fetch_all_mapped_symbols(symbol_to_id):
 def fetch_symbols(exchange, symbol_to_id):
     """Fetch only the symbols available on Poloniex that match the mapping."""
     try:
-        response = requests.get(POLONIEX_API_URL)
+        api_key = os.getenv('API_KEY')
+        api_secret = os.getenv('API_SECRET')
+        headers = {
+            'X-API-Key': api_key,
+            'X-API-Secret': api_secret
+        }
+        response = requests.get(POLONIEX_API_URL, headers=headers)
         if response.status_code == 200:
             data = response.json()
         else:
@@ -73,7 +80,13 @@ def fetch_symbols(exchange, symbol_to_id):
 def fetch_market_data() -> Dict[str, Dict[str, float]]:
     """Fetch market data from Poloniex."""
     try:
-        response = requests.get(POLONIEX_API_URL)
+        api_key = os.getenv('API_KEY')
+        api_secret = os.getenv('API_SECRET')
+        headers = {
+            'X-API-Key': api_key,
+            'X-API-Secret': api_secret
+        }
+        response = requests.get(POLONIEX_API_URL, headers=headers)
         if response.status_code == 200:
             return response.json()
         else:

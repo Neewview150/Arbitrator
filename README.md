@@ -26,7 +26,34 @@ To set up the project, follow these steps:
    ```
 
 ## Usage
+## API Credentials Setup
 
+To use the private API for fetching price data, you need to set up your API credentials. Follow these steps:
+
+1. Obtain your API key and secret from the exchange or service you are using.
+2. Set the API credentials as environment variables in your system:
+
+   - On macOS and Linux:
+     ```bash
+     export API_KEY='your_api_key_here'
+     export API_SECRET='your_api_secret_here'
+     ```
+
+   - On Windows:
+     ```cmd
+     set API_KEY=your_api_key_here
+     set API_SECRET=your_api_secret_here
+     ```
+
+   Alternatively, you can create a `.env` file in the project root directory and add the following lines:
+   ```
+   API_KEY=your_api_key_here
+   API_SECRET=your_api_secret_here
+   ```
+
+   Make sure to replace `your_api_key_here` and `your_api_secret_here` with your actual API key and secret.
+
+## Usage
 To run the project and start the web interface, execute the following command:
 
 ```bash

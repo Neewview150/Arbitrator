@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, send_from_directory
 import logging
-from data_fetcher import fetch_and_return_data, prepare_chart_data
+from data_fetcher import fetch_symbols, fetch_market_data, prepare_chart_data
 from arbitrage_finder import find_direct_arbitrage_opportunities, find_triangular_arbitrage_opportunities, format_arbitrage_opportunities, calculate_profitability_and_duration, fetch_executed_trades
 
 app = Flask(__name__)
@@ -18,19 +18,14 @@ def get_data():
     """API endpoint to fetch chart data and arbitrage opportunities."""
     try:
         # Load symbol mapping
-        symbol_to_id = fetch_and_return_data("symbols.txt")
-        
-        if not symbol_to_id:
-            logging.error("Failed to load symbol mapping.")
-            return jsonify({'error': 'Failed to load symbol mapping'}), 500
-        
-        # Fetch symbols and prices
+        # Fetch symbols and prices using the private API
         try:
-            symbols, prices = fetch_and_return_data(symbol_to_id)
-            logging.info(f"Fetched symbols and prices: {symbols}, {prices}")
+            symbols = fetch_symbols()
+            prices = fetch_market_data()
+            logging.info(f"Fetched symbols and prices using private API: {symbols}, {prices}")
         except Exception as e:
-            logging.error(f"Error fetching symbols and prices: {e}")
-            return jsonify({'error': 'Failed to fetch symbols and prices'}), 500
+            logging.error(f"Error fetching symbols and prices using private API: {e}")
+            return jsonify({'error': 'Failed to fetch symbols and prices using private API'}), 500
         
         # Prepare chart data
         chart_data = prepare_chart_data(prices)
